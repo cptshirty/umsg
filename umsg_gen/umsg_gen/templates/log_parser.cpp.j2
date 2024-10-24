@@ -53,6 +53,8 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             {% if field.length %}
             for(uint32_t i=0;i<{{field.length}}; i++){
             file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message->{{field.name}}[i])
+            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}[i]
+            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}[i]
             {% else %}message->{{field.name}}[i] {% endif %} ;
             {%if loop.last%}
             if(i<{{field.length}} - 1)
@@ -61,7 +63,10 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             }
             {% endif %}
             {% if not field.length %}    
-            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message->{{field.name}}) {% else %}message->{{field.name}}{% endif %}{% if not loop.last%} << ", "{% endif %};
+            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message->{{field.name}})
+            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}
+            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}
+            {% else %}message->{{field.name}}{% endif %}{% if not loop.last%} << ", "{% endif %};
             {% endif %}
             {% endif %}
             {% if field.bitfield %}
