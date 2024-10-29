@@ -33,6 +33,13 @@ void umsg_publish(umsg_msg_metadata_t* msg, void* data, uint8_t ch_id);
 uint8_t umsg_receive(umsg_sub_handle_t queue, void* data, uint32_t timeout);
 uint8_t umsg_peek(umsg_msg_metadata_t* msg, void* data, uint32_t size);
 
+
+void umsg_CRCInit();
+uint8_t umsg_checkCRC(uint8_t* buffer, uint32_t len);
+uint8_t umsg_calcCRC(uint8_t* buffer, uint32_t len);
+
+
+
 #ifdef __cplusplus
 }
 #endif

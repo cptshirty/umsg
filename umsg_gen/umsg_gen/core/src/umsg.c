@@ -6,6 +6,11 @@
 #include <umsg_port.h>
 #include <string.h>
 
+uint8_t CRCresults[256];
+
+const uint8_t remainder_len = 8;
+const uint16_t POLYNOMIAL = 0x2F; // this is a CRC8 polynomial
+
 umsg_sub_handle_t umsg_subscribe(umsg_msg_metadata_t* msg, uint16_t prescaler, uint32_t size, uint8_t length, uint8_t ch_id)
 {
     if(msg->sub_list == NULL)
@@ -66,4 +71,55 @@ uint8_t umsg_peek(umsg_msg_metadata_t* msg, void* data, uint32_t size)
         return 1;
     }
     return 0;
+}
+
+
+void umsg_CRCInit(){
+
+    uint8_t top_bit = (1 << (remainder_len - 1));
+    uint8_t remainder = 0;
+    for(int i = 0; i < 256; i++){
+        remainder = i;
+        for (uint8_t bit = 8; bit > 0; --bit)
+        {
+            /*
+             * Try to divide the current data bit.
+             */			
+            if (remainder & top_bit)
+            {
+                remainder = (remainder << 1) ^ POLYNOMIAL;
+            }
+            else
+            {
+                remainder = (remainder << 1);
+            }
+        }
+        CRCresults[i] = remainder;
+    }
+
+
+}
+
+
+uint8_t umsg_checkCRC(uint8_t* buffer, uint32_t len){
+    uint8_t remainder = umsg_calcCRC(buffer,len);
+    if(remainder == 0)
+        return 0;
+    return 1;
+}
+
+
+uint8_t umsg_calcCRC(uint8_t* buffer, uint32_t len){
+    uint8_t data;
+    uint8_t remainder = 0;
+
+    /*
+     * Divide the message by the polynomial, a byte at a time.
+     */
+    for (int byte = 0; byte < len; ++byte)
+    {
+        data = buffer[byte] ^ (remainder);
+        remainder = CRCresults[data] ^ (remainder << 8);
+    }
+    return remainder;
 }

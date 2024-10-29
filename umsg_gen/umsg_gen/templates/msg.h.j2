@@ -89,6 +89,11 @@ uint8_t umsg_{{prefix}}_peek(umsg_{{prefix}}_t* data);
 //please take care that the messages are build properly to avoid padding issues if the messages are opened on different system
 uint32_t umsg_{{prefix}}_serialize(umsg_{{prefix}}_t* data, uint8_t* buffer);
 uint8_t umsg_{{prefix}}_deserialize(umsg_{{prefix}}_t* data,uint8_t* buffer); // this function includes check that the message type is correct
+
+uint32_t umsg_{{prefix}}_serialize_CRC(umsg_{{prefix}}_t* data, uint8_t* buffer);
+uint8_t umsg_{{prefix}}_deserialize_CRC(umsg_{{prefix}}_t* data,uint8_t* buffer); // this function includes check that the message type is correct
+
+
 {% endif %}
 
 {% endfor %}

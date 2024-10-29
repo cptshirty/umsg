@@ -42,7 +42,7 @@ uint32_t umsg_{{prefix}}_serialize(umsg_{{prefix}}_t* data, uint8_t* buffer)
     uint32_t len = 2;
     buffer[0] = UMSG_{{topic_dict.name.upper()}};
     buffer[1] = {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
-    char *flattened_data = (char *)data;
+    uint8_t *flattened_data = (uint8_t *)data;
     //this can probably be replaced by memcpy but it is done like this for now just to be safe
     for(uint32_t i = 0; i < sizeof(umsg_{{prefix}}_t);i++)
     {
@@ -57,11 +57,11 @@ uint8_t umsg_{{prefix}}_deserialize(umsg_{{prefix}}_t* data,uint8_t* buffer)
 {
     if(buffer[0]!=UMSG_{{topic_dict.name.upper()}} || buffer[1] !={{topic_dict.name.upper()}}_{{msg_dict.name.upper()}})
     {
-        return 0;
+        return 1;
     }
 
     uint32_t offset = 2;
-    char *flattened_data = (char *)data;
+    uint8_t *flattened_data = (uint8_t *)data;
     //this can probably be replaced by memcpy but it is done like this for now just to be safe
     for(uint32_t i = 0; i < sizeof(umsg_{{prefix}}_t);i++)
     {
@@ -69,8 +69,23 @@ uint8_t umsg_{{prefix}}_deserialize(umsg_{{prefix}}_t* data,uint8_t* buffer)
         offset++;
     }
 
-    return 1;
+    return 0;
 }
+
+uint32_t umsg_{{prefix}}_serialize_CRC(umsg_{{prefix}}_t* data, uint8_t* buffer){
+    uint32_t len = umsg_{{prefix}}_serialize(data,buffer);
+    uint8_t crc = umsg_calcCRC(buffer, len);
+    buffer[len] = crc;
+    len++;
+    return len;
+}
+uint8_t umsg_{{prefix}}_deserialize_CRC(umsg_{{prefix}}_t* data,uint8_t* buffer){
+    uint8_t invalidcrc = umsg_checkCRC(buffer, sizeof(umsg_{{prefix}}_t) + 3);
+    uint8_t retval = umsg_{{prefix}}_deserialize(data,buffer);
+    return  invalidcrc | (retval << 1);
+}
+
+
 {% endif  %}
 {% endfor %}
 

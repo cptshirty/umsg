@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <stdio.h>
 
-
+#include "umsg.h"
 #include"umsg_classes.h"
 
 {% for val in topic_dict_list%}
@@ -18,6 +18,9 @@
 
 
 //globally defined streams for topic files
+
+char buffer[1000];
+
 
 {% for dict in topic_dict_list%}
 {% for msg_dict in dict.msgs%}
@@ -39,23 +42,27 @@ void sort_{{dict.name}}_type(std::ifstream &file)
         exit(2);
     }
 
+    buffer[0] = UMSG_{{dict.name.upper()}};
+    buffer[1] = msg_type;
     switch(msg_type)
     {
 {% for msg_dict in dict.msgs%}
         case {{dict.name.upper()}}_{{msg_dict.name.upper()}}:
             {
-            char buffer[sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t)];
-            file.read(buffer,sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t));
-            umsg_{{dict.name}}_{{msg_dict.name}}_t*  message = reinterpret_cast<umsg_{{dict.name}}_{{msg_dict.name}}_t *> (buffer);
-
+            file.read(buffer + 2,sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t) + 1); //read including the crc byte
+            umsg_{{dict.name}}_{{msg_dict.name}}_t message; 
+            uint8_t retval = umsg_{{dict.name}}_{{msg_dict.name}}_deserialize_CRC(&message,(uint8_t *)buffer);
+            if(retval){
+                std::cout << "retval for message {{dict.name.upper()}}_{{msg_dict.name.upper()}} failed with value: " << static_cast<int>(retval) << std::endl;
+            }
             {% for field in msg_dict.fields %}
             {% if not field.bitfield %}
             {% if field.length %}
             for(uint32_t i=0;i<{{field.length}}; i++){
-            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message->{{field.name}}[i])
-            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}[i]
-            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}[i]
-            {% else %}message->{{field.name}}[i] {% endif %} ;
+            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message.{{field.name}}[i])
+            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}[i]
+            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}[i]
+            {% else %}message.{{field.name}}[i] {% endif %} ;
             {%if loop.last%}
             if(i<{{field.length}} - 1)
             {%endif%}    
@@ -63,15 +70,15 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             }
             {% endif %}
             {% if not field.length %}    
-            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message->{{field.name}})
-            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}
-            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message->{{field.name}}
-            {% else %}message->{{field.name}}{% endif %}{% if not loop.last%} << ", "{% endif %};
+            file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message.{{field.name}})
+            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}
+            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}
+            {% else %}message.{{field.name}}{% endif %}{% if not loop.last%} << ", "{% endif %};
             {% endif %}
             {% endif %}
             {% if field.bitfield %}
             {%for bitfield in field.bitfield %}
-            file_{{dict.name}}_{{msg_dict.name}} << static_cast<int>(message->{{bitfield.name}}){% if not loop.last%} << ", "{% endif %};
+            file_{{dict.name}}_{{msg_dict.name}} << static_cast<int>(message.{{bitfield.name}}){% if not loop.last%} << ", "{% endif %};
             {%endfor%}
             {% endif %}
             {% endfor %}
@@ -139,7 +146,7 @@ int main(int argc, char *argv[]) {
         std::cerr << std::endl << "Usage: " << argv[0] << " <file_path>" << std::endl;
         return 1;
     }
-   
+    umsg_CRCInit();
     //proceed to open the file
     const std::string file_path = argv[1];
     std::ifstream file(file_path,std::ios::binary);
