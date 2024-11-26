@@ -2,6 +2,8 @@
 #include <umsg.h>
 #include <umsg_{{topic_dict.name}}.h>
 
+#include "umsg_classes.h"
+#include "umsg.h"
 // msg instances
 {% for msg_dict in topic_dict.msgs %}
 {% set prefix = topic_dict.name+'_'+msg_dict.name%}
@@ -37,23 +39,29 @@ uint8_t umsg_{{prefix}}_peek(umsg_{{prefix}}_t* data)
     return umsg_peek(&msg_{{prefix}}, data, sizeof(umsg_{{prefix}}_t));
 }
 {%if log == "do_log" %}
-uint32_t umsg_{{prefix}}_serialize(umsg_{{prefix}}_t* data, uint8_t* buffer)
-{
+
+
+
+uint32_t umsg_{{prefix}}_receive_to_transfer(umsg_sub_handle_t queue, MessageToTransfer* msg){
     uint32_t len = 2;
-    buffer[0] = UMSG_{{topic_dict.name.upper()}};
-    buffer[1] = {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
-    uint8_t *flattened_data = (uint8_t *)data;
-    //this can probably be replaced by memcpy but it is done like this for now just to be safe
-    for(uint32_t i = 0; i < sizeof(umsg_{{prefix}}_t);i++)
-    {
-        buffer[len] = flattened_data[i];
-        len++;
+    
+    if(umsg_{{prefix}}_receive(queue,&(msg->s.{{topic_dict.name}}.{{msg_dict.name}}),0)){
+    
+    
+    msg->s.msg_class = UMSG_{{topic_dict.name.upper()}};
+    msg->s.msg_type = {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
+    len+= sizeof(umsg_{{topic_dict.name}}_{{msg_dict.name}}_t);
+    msg->raw[len+1] = umsg_calcCRC(&(msg->raw),len);
+    return len+1;
     }
-    return len;
+
+    return 0;
 }
 
+
 //for now lets assume that there are less than 255 message classes and 255 message types per class, this has to be fixed in the future
-uint8_t umsg_{{prefix}}_deserialize(umsg_{{prefix}}_t* data,uint8_t* buffer)
+/*
+uint32_t umsg_{{prefix}}_publish_received(MessageToTransfer* msg)
 {
     if(buffer[0]!=UMSG_{{topic_dict.name.upper()}} || buffer[1] !={{topic_dict.name.upper()}}_{{msg_dict.name.upper()}})
     {
@@ -71,20 +79,7 @@ uint8_t umsg_{{prefix}}_deserialize(umsg_{{prefix}}_t* data,uint8_t* buffer)
 
     return 0;
 }
-
-uint32_t umsg_{{prefix}}_serialize_CRC(umsg_{{prefix}}_t* data, uint8_t* buffer){
-    uint32_t len = umsg_{{prefix}}_serialize(data,buffer);
-    uint8_t crc = umsg_calcCRC(buffer, len);
-    buffer[len] = crc;
-    len++;
-    return len;
-}
-uint8_t umsg_{{prefix}}_deserialize_CRC(umsg_{{prefix}}_t* data,uint8_t* buffer){
-    uint8_t invalidcrc = umsg_checkCRC(buffer, sizeof(umsg_{{prefix}}_t) + 3);
-    uint8_t retval = umsg_{{prefix}}_deserialize(data,buffer);
-    return  invalidcrc | (retval << 1);
-}
-
+*/
 
 {% endif  %}
 {% endfor %}

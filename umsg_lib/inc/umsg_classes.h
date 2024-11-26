@@ -9,16 +9,14 @@ extern "C" {
 
 typedef enum
 {
-UMSG_BATTERY,
-UMSG_CONTROL,
-UMSG_UNUSED,
-UMSG_TEST,
-UMSG_SENSORS,
-UMSG_EXAMPLE
+  UMSG_BATTERY,
+  UMSG_CONTROL,
+  UMSG_UNUSED,
+  UMSG_TEST,
+  UMSG_SENSORS,
+  UMSG_EXAMPLE
 } umsg_classes_t;
 
 #ifdef __cplusplus
 }
 #endif
-
-

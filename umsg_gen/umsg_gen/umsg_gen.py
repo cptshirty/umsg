@@ -56,10 +56,10 @@ def main():
         # load topic json file
         f = open(file)
         topic_dict = json.load(f)
-        topic_dict_list.append(topic_dict)
         # add name field to topic dict
         topic_dict['name'] = Path(file).stem
-
+        topic_dict_list.append(topic_dict)
+        
         # generate header
         filename = f'{output_path}/inc/umsg_{topic_dict["name"]}.h'
         Path(filename).parent.mkdir(parents=True, exist_ok=True)
@@ -76,11 +76,11 @@ def main():
 
         # add file name to list
         sources.append(Path(filename).name)
-        headers.append(f'umsg_{topic_dict["name"]}')
+        headers.append(f'{topic_dict["name"]}')
  
 
     # Generate the msg_classes header file
-    content = msg_class_inc_template.render(headers=headers, date=datetime.date.today())
+    content = msg_class_inc_template.render(topic_dict_list = topic_dict_list, date=datetime.date.today())
     filename = f'{output_path}/inc/umsg_classes.h'
     with open(filename, mode="w", encoding="utf-8") as message:
         message.write(content)

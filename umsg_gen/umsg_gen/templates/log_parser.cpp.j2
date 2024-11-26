@@ -19,7 +19,7 @@
 
 //globally defined streams for topic files
 
-char buffer[1000];
+MessageToTransfer buffer;
 
 
 {% for dict in topic_dict_list%}
@@ -42,16 +42,19 @@ void sort_{{dict.name}}_type(std::ifstream &file)
         exit(2);
     }
 
-    buffer[0] = UMSG_{{dict.name.upper()}};
-    buffer[1] = msg_type;
+    buffer.s.sync0 = 'M';
+    buffer.s.sync1 = 'R';
+    buffer.s.msg_class = UMSG_{{dict.name.upper()}};
+    buffer.s.msg_type = msg_type;
     switch(msg_type)
     {
 {% for msg_dict in dict.msgs%}
         case {{dict.name.upper()}}_{{msg_dict.name.upper()}}:
             {
-            file.read(buffer + 2,sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t) + 1); //read including the crc byte
-            umsg_{{dict.name}}_{{msg_dict.name}}_t message; 
-            uint8_t retval = umsg_{{dict.name}}_{{msg_dict.name}}_deserialize_CRC(&message,(uint8_t *)buffer);
+            uint32_t len = sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t) + 5;
+            file.read((char *)(buffer.raw + 4),len-4); //read including the crc byte
+            umsg_{{dict.name}}_{{msg_dict.name}}_t message = buffer.s.{{dict.name}}.{{msg_dict.name}}; 
+            uint8_t retval = umsg_calcCRC(buffer.raw,len);
             if(retval){
                 std::cout << "retval for message {{dict.name.upper()}}_{{msg_dict.name.upper()}} failed with value: " << static_cast<int>(retval) << std::endl;
             }
@@ -60,8 +63,8 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             {% if field.length %}
             for(uint32_t i=0;i<{{field.length}}; i++){
             file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message.{{field.name}}[i])
-            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}[i]
-            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}[i]
+            {% elif field.type == "float"%} std::setprecision(19) << message.{{field.name}}[i]
+            {%elif field.type == "double"%} std::setprecision(19) << message.{{field.name}}[i]
             {% else %}message.{{field.name}}[i] {% endif %} ;
             {%if loop.last%}
             if(i<{{field.length}} - 1)
@@ -71,8 +74,8 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             {% endif %}
             {% if not field.length %}    
             file_{{dict.name}}_{{msg_dict.name}} << {% if field.type =="uint8"%} static_cast<int>(message.{{field.name}})
-            {% elif field.type == "float"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}
-            {%elif field.type == "double"%} std::setprecision(std::numeric_limits<double>::max_digits10) << message.{{field.name}}
+            {% elif field.type == "float"%} std::setprecision(19) << message.{{field.name}}
+            {%elif field.type == "double"%} std::setprecision(19) << message.{{field.name}}
             {% else %}message.{{field.name}}{% endif %}{% if not loop.last%} << ", "{% endif %};
             {% endif %}
             {% endif %}
@@ -102,14 +105,20 @@ void sort_msg(std::ifstream &file)
         std::cerr << std::endl << "Error opening logfile" << std::endl;
         return;
     }
+    uint8_t starthead[3];
+    file.read((char *)starthead, 3);
 
-    uint8_t msg_class;
-    file.read((char *)&msg_class, 1);
+    if(starthead[0]!= 'M' || starthead[1] !='R'){
+        std::cerr << std::endl << "Error, no sync bytes detected" << std::endl;
+        return;
+    
+    }
+
     if (!file) {
         std::cerr << std::endl << "Error reading file" << std::endl;
         return;
     }
-
+    uint8_t msg_class = starthead[2];
     switch(msg_class)
     {    
 {% for dict in topic_dict_list%}  
