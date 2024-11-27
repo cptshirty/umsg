@@ -92,7 +92,9 @@ umsg_{{topic_dict.name}}_{{type.lower()}}_t
     };
 {%endfor%}
 
-struct Structured{
+
+
+struct __attribute__((packed, aligned(4))) Structured{
     uint8_t sync0;
     uint8_t sync1;
     uint8_t msg_class;

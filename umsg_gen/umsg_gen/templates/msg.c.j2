@@ -43,15 +43,14 @@ uint8_t umsg_{{prefix}}_peek(umsg_{{prefix}}_t* data)
 
 
 uint32_t umsg_{{prefix}}_receive_to_transfer(umsg_sub_handle_t queue, MessageToTransfer* msg){
-    uint32_t len = 2;
     
     if(umsg_{{prefix}}_receive(queue,&(msg->s.{{topic_dict.name}}.{{msg_dict.name}}),0)){
     
-    
+    uint32_t len = 4;
     msg->s.msg_class = UMSG_{{topic_dict.name.upper()}};
     msg->s.msg_type = {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
     len+= sizeof(umsg_{{topic_dict.name}}_{{msg_dict.name}}_t);
-    msg->raw[len+1] = umsg_calcCRC(&(msg->raw),len);
+    msg->raw[len] = umsg_calcCRC(&(msg->raw),len);
     return len+1;
     }
 

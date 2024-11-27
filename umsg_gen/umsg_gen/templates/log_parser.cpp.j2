@@ -54,7 +54,7 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             uint32_t len = sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t) + 5;
             file.read((char *)(buffer.raw + 4),len-4); //read including the crc byte
             umsg_{{dict.name}}_{{msg_dict.name}}_t message = buffer.s.{{dict.name}}.{{msg_dict.name}}; 
-            uint8_t retval = umsg_calcCRC(buffer.raw,len);
+            uint8_t retval = umsg_checkCRC(buffer.raw,len);
             if(retval){
                 std::cout << "retval for message {{dict.name.upper()}}_{{msg_dict.name.upper()}} failed with value: " << static_cast<int>(retval) << std::endl;
             }
