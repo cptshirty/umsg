@@ -31,6 +31,7 @@ def main():
     env.lstrip_blocks = True
     
     msg_class_inc_template = env.get_template(name='msg_classes.h.j2')
+    msg_class_src_template = env.get_template(name='msg_classes.c.j2')
     log_parser_template = env.get_template(name='log_parser.cpp.j2')
     cmake_log_parser_template = env.get_template(name='CMakeLists_log_parser.txt.j2')
     inc_template = env.get_template(name='msg.h.j2')
@@ -84,6 +85,14 @@ def main():
     filename = f'{output_path}/inc/umsg_classes.h'
     with open(filename, mode="w", encoding="utf-8") as message:
         message.write(content)
+
+
+    content = msg_class_src_template.render(topic_dict_list = topic_dict_list, date=datetime.date.today())
+    filename = f'{output_path}/src/umsg_classes.c'
+    with open(filename, mode="w", encoding="utf-8") as message:
+        message.write(content)
+
+
 
     if log == "do_log":
         #Generate the logfile parser

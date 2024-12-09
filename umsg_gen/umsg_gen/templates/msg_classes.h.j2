@@ -94,7 +94,7 @@ umsg_{{topic_dict.name}}_{{type.lower()}}_t
 
 
 
-struct __attribute__((packed, aligned(4))) Structured{
+struct __attribute__((packed, aligned(4))) umsg_structured{
     uint8_t sync0;
     uint8_t sync1;
     uint8_t msg_class;
@@ -108,14 +108,24 @@ struct __attribute__((packed, aligned(4))) Structured{
 
 
 typedef union {
-    struct Structured s;
-    uint8_t raw[sizeof(struct Structured) + 1];
+    struct umsg_structured s;
+    uint8_t raw[sizeof(struct umsg_structured) + 1];
 
 }MessageToTransfer;
 
 
+
+
+
 // this method only publishes the message if the CRC is correct
-uint32_t umsg_publish_received(MessageToTransfer* msg);
+
+umsg_sub_handle_t umsg_structured_subscribe(uint32_t prescaler, uint8_t length);
+
+uint32_t umsg_receive_structured(umsg_sub_handle_t queue ,struct umsg_structured * data, uint32_t timeout);
+
+uint8_t umsg_publish_structured(struct umsg_structured * data);
+
+void umsg_broadcast_structured(MessageToTransfer *msg);
 
 
 
