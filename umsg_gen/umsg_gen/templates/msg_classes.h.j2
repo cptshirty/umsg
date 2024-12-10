@@ -87,7 +87,9 @@ umsg_{{topic_dict.name}}_{{type.lower()}}_t
     union umsg_{{topic_dict.name}}_Messages
     {
     {% for msg_dict in topic_dict.msgs %}
+        {%if msg_dict.log == 1 or msg_dict.transmit == 1 %}
         umsg_{{topic_dict.name}}_{{msg_dict.name}}_t {{msg_dict.name}};
+        {% endif %}
     {% endfor -%}
     };
 {%endfor%}
@@ -99,6 +101,7 @@ struct __attribute__((packed, aligned(4))) umsg_structured{
     uint8_t sync1;
     uint8_t msg_class;
     uint8_t msg_type;
+    uint32_t len; // length of the message including the CRC
     union{
         {% for topic_dict in topic_dict_list%}
         union umsg_{{topic_dict.name}}_Messages {{topic_dict.name}};
@@ -111,7 +114,7 @@ typedef union {
     struct umsg_structured s;
     uint8_t raw[sizeof(struct umsg_structured) + 1];
 
-}MessageToTransfer;
+}umsg_MessageToTransfer;
 
 
 
@@ -119,13 +122,20 @@ typedef union {
 
 // this method only publishes the message if the CRC is correct
 
-umsg_sub_handle_t umsg_structured_subscribe(uint32_t prescaler, uint8_t length);
+umsg_sub_handle_t umsg_structured_subscribe_logger(uint32_t prescaler, uint8_t length);
 
-uint32_t umsg_receive_structured(umsg_sub_handle_t queue ,struct umsg_structured * data, uint32_t timeout);
+umsg_sub_handle_t umsg_structured_subscribe_transmitter(uint32_t prescaler, uint8_t length);
 
-uint8_t umsg_publish_structured(struct umsg_structured * data);
+uint8_t umsg_receive_structured(umsg_sub_handle_t queue ,umsg_MessageToTransfer * data, uint32_t timeout);
 
-void umsg_broadcast_structured(MessageToTransfer *msg);
+
+void umsg_publish_structured_to_log(umsg_MessageToTransfer * data);
+
+void umsg_publish_structured_to_transmit(umsg_MessageToTransfer * data);
+
+
+
+void umsg_broadcast_structured(umsg_MessageToTransfer *msg);
 
 
 

@@ -19,7 +19,7 @@
 
 //globally defined streams for topic files
 
-MessageToTransfer buffer;
+umsg_MessageToTransfer buffer;
 
 
 {% for dict in topic_dict_list%}
@@ -36,7 +36,9 @@ std::ofstream file_{{dict.name}}_{{msg_dict.name}};
 void sort_{{dict.name}}_type(std::ifstream &file)
 {
     uint8_t msg_type;
+    uint32_t len;
     file.read((char *)&msg_type, 1);
+    file.read((char *)&len, 4);
     if (!file) {
         std::cerr << std::endl << "Error reading file" << std::endl;
         exit(2);
@@ -49,10 +51,10 @@ void sort_{{dict.name}}_type(std::ifstream &file)
     switch(msg_type)
     {
 {% for msg_dict in dict.msgs%}
+        {%if msg_dict.log == 1%}
         case {{dict.name.upper()}}_{{msg_dict.name.upper()}}:
             {
-            uint32_t len = sizeof(umsg_{{dict.name}}_{{msg_dict.name}}_t) + 5;
-            file.read((char *)(buffer.raw + 4),len-4); //read including the crc byte
+            file.read((char *)(buffer.raw + 8),len-8); //read including the crc byte
             umsg_{{dict.name}}_{{msg_dict.name}}_t message = buffer.s.{{dict.name}}.{{msg_dict.name}}; 
             uint8_t retval = umsg_checkCRC(buffer.raw,len);
             if(retval){
@@ -89,6 +91,7 @@ void sort_{{dict.name}}_type(std::ifstream &file)
             file_{{dict.name}}_{{msg_dict.name}} << std::endl;
             }
             break;
+        {% endif %}
 {%endfor%}
         default:
         std::cerr << std::endl << "ERROR UNKNOWN MESSAGE TYPE: " << static_cast<int>(msg_type) << std::endl;

@@ -27,14 +27,29 @@ umsg_sub_handle_t umsg_{{prefix}}_subscribe_ch(uint32_t prescaler, uint8_t lengt
 void umsg_{{prefix}}_publish(umsg_{{prefix}}_t* data)
 {
     umsg_publish(&msg_{{prefix}}, data, 0);
-    {%if  == 0 %}
 
+
+    {%if msg_dict.log == 1 or  msg_dict.transmit == 1 %}
+    uint32_t len = 8;
+    len+= sizeof(umsg_{{topic_dict.name}}_{{msg_dict.name}}_t) + 1;
+    umsg_MessageToTransfer M;
+    M.s.sync0 = 'M';
+    M.s.sync1 = 'R';
+    M.s.msg_class = UMSG_{{topic_dict.name.upper()}};
+    M.s.msg_type =  {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
+    M.s.len = len;
+    M.s.{{topic_dict.name}}.{{msg_dict.name}} = *data;
     
-    {% else %}
-    
-    umsg_publish(&msg_{{prefix}}, data, channel);
+    M.raw[len] = umsg_calcCRC(&(M.raw),len);
     
     {% endif %}
+    {%if msg_dict.transmit == 1%}
+    umsg_publish_structured_to_transmit(&M);
+    {% endif %}
+    {%if msg_dict.log == 1 %}
+    umsg_publish_structured_to_log(&M);
+    {% endif %}
+    
 }
 void umsg_{{prefix}}_publish_ch(umsg_{{prefix}}_t* data, uint8_t channel)
 {
@@ -48,48 +63,5 @@ uint8_t umsg_{{prefix}}_peek(umsg_{{prefix}}_t* data)
 {
     return umsg_peek(&msg_{{prefix}}, data, sizeof(umsg_{{prefix}}_t));
 }
-{%if log == "do_log" %}
-
-
-
-uint32_t umsg_{{prefix}}_receive_to_transfer(umsg_sub_handle_t queue, MessageToTransfer* msg){
-    
-    if(umsg_{{prefix}}_receive(queue,&(msg->s.{{topic_dict.name}}.{{msg_dict.name}}),0)){
-    
-    uint32_t len = 4;
-    msg->s.msg_class = UMSG_{{topic_dict.name.upper()}};
-    msg->s.msg_type = {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}};
-    len+= sizeof(umsg_{{topic_dict.name}}_{{msg_dict.name}}_t);
-    msg->raw[len] = umsg_calcCRC(&(msg->raw),len);
-    return len+1;
-    }
-
-    return 0;
-}
-
-
-//for now lets assume that there are less than 255 message classes and 255 message types per class, this has to be fixed in the future
-/*
-uint32_t umsg_{{prefix}}_publish_received(MessageToTransfer* msg)
-{
-    if(buffer[0]!=UMSG_{{topic_dict.name.upper()}} || buffer[1] !={{topic_dict.name.upper()}}_{{msg_dict.name.upper()}})
-    {
-        return 1;
-    }
-
-    uint32_t offset = 2;
-    uint8_t *flattened_data = (uint8_t *)data;
-    //this can probably be replaced by memcpy but it is done like this for now just to be safe
-    for(uint32_t i = 0; i < sizeof(umsg_{{prefix}}_t);i++)
-    {
-        flattened_data[i] = buffer[offset];
-        offset++;
-    }
-
-    return 0;
-}
-*/
-
-{% endif  %}
 {% endfor %}
 
