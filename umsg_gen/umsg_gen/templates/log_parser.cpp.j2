@@ -36,7 +36,7 @@ std::ofstream file_{{dict.name}}_{{msg_dict.name}};
 void sort_{{dict.name}}_type(std::ifstream &file)
 {
     uint8_t msg_type;
-    uint32_t len;
+    uint32_t len = 0;
     file.read((char *)&msg_type, 1);
     file.read((char *)&len, 4);
     if (!file) {
@@ -48,6 +48,7 @@ void sort_{{dict.name}}_type(std::ifstream &file)
     buffer.s.sync1 = 'R';
     buffer.s.msg_class = UMSG_{{dict.name.upper()}};
     buffer.s.msg_type = msg_type;
+    buffer.s.len = len;
     switch(msg_type)
     {
 {% for msg_dict in dict.msgs%}

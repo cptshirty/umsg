@@ -40,7 +40,7 @@ void umsg_{{prefix}}_publish(umsg_{{prefix}}_t* data)
     M.s.len = len;
     M.s.{{topic_dict.name}}.{{msg_dict.name}} = *data;
     
-    M.raw[len] = umsg_calcCRC(&(M.raw),len);
+    M.raw[len -1] = umsg_calcCRC((M.raw),len -1);
     
     {% endif %}
     {%if msg_dict.transmit == 1%}
