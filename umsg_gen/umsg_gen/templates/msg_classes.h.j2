@@ -87,7 +87,7 @@ umsg_{{topic_dict.name}}_{{type.lower()}}_t
     union umsg_{{topic_dict.name}}_Messages
     {
     {% for msg_dict in topic_dict.msgs %}
-        {%if msg_dict.log == 1 or msg_dict.transmit == 1 %}
+        {%if msg_dict.log == 1 or msg_dict.transmit == 1 or msg_dict.receive == 1 %}
         umsg_{{topic_dict.name}}_{{msg_dict.name}}_t {{msg_dict.name}};
         {% endif %}
     {% endfor -%}
@@ -95,6 +95,7 @@ umsg_{{topic_dict.name}}_{{type.lower()}}_t
 {%endfor%}
 
 
+#define UMSG_HEADER_SIZE 8
 
 struct __attribute__((packed, aligned(4))) umsg_structured{
     uint8_t sync0;
@@ -109,10 +110,10 @@ struct __attribute__((packed, aligned(4))) umsg_structured{
     };
 };
 
-
+// +1 for crc spot
 typedef union {
     struct umsg_structured s;
-    uint8_t raw[sizeof(struct umsg_structured) + 1];
+    uint8_t raw[sizeof(struct umsg_structured) + 2];
 
 }umsg_MessageToTransfer;
 

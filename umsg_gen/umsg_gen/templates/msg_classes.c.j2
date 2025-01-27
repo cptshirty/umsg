@@ -30,4 +30,37 @@ void umsg_publish_structured_to_transmit(umsg_MessageToTransfer * data){
 
 void umsg_broadcast_structured(umsg_MessageToTransfer *msg){
 
+    switch(msg->s.msg_class){
+    {% for topic_dict in topic_dict_list%}
+        case UMSG_{{topic_dict.name.upper()}}:
+        {
+            switch(msg->s.msg_type){
+            {% for msg_dict in topic_dict.msgs %}
+            {% set prefix = topic_dict.name+'_'+msg_dict.name%}
+            {%if msg_dict.receive == 1 %}
+            case {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}}:
+            {
+                umsg_{{prefix}}_t data = *msg->s.{{topic_dict.name}}.{{msg_dict.name}};
+                umsg_{{prefix}}_publish(&data);
+            }
+            break;
+            {%endif%}
+            {% endfor%}
+            default:
+            break;
+            
+            }
+        break;
+        }
+    {% endfor%}
+
+
+    
+    
+    default:
+        break;
+    }
+
+
+
 }

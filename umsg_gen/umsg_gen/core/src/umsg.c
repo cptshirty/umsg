@@ -6,7 +6,7 @@
 #include <umsg_port.h>
 #include <string.h>
 
-uint8_t CRCresults[256];
+static uint8_t CRCresults[256];
 
 const uint8_t  remainder_len = 8;
 const uint16_t POLYNOMIAL    = 0x2F;  // this is a CRC8 polynomial

@@ -29,7 +29,7 @@ void umsg_{{prefix}}_publish(umsg_{{prefix}}_t* data)
     umsg_publish(&msg_{{prefix}}, data, 0);
 
 
-    {%if msg_dict.log == 1 or  msg_dict.transmit == 1 %}
+    {%if msg_dict.log == 1 or msg_dict.transmit == 1 %}
     uint32_t len = 8;
     len+= sizeof(umsg_{{topic_dict.name}}_{{msg_dict.name}}_t) + 1;
     umsg_MessageToTransfer M;
