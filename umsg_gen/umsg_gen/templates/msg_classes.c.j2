@@ -40,7 +40,7 @@ void umsg_broadcast_structured(umsg_MessageToTransfer *msg){
             {%if msg_dict.receive == 1 %}
             case {{topic_dict.name.upper()}}_{{msg_dict.name.upper()}}:
             {
-                umsg_{{prefix}}_t data = *msg->s.{{topic_dict.name}}.{{msg_dict.name}};
+                umsg_{{prefix}}_t data = msg->s.{{topic_dict.name}}.{{msg_dict.name}};
                 umsg_{{prefix}}_publish(&data);
             }
             break;
